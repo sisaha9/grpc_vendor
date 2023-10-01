@@ -1,0 +1,47 @@
+name: ROS2 CI Workflow
+
+on:
+  pull_request:
+    branches:
+      - stable
+  push:
+    branches:
+      - stable
+  workflow_dispatch:
+
+jobs:
+  build-test-ros2:
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - ros_distro: "galactic"
+          - ros_distro: "humble"
+          - ros_distro: "rolling"
+    container:
+      image: osrf/ros:${{ matrix.ros_distro }}-desktop
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+      - name: Install Dependencies
+        run: |
+          bash -c 'source /opt/ros/${{ matrix.ros_distro }}/setup.bash; \
+          vcs import < depend.repos; \
+          sudo apt update; \
+          rosdep update --include-eol-distros; \
+          rosdep install -y -r --rosdistro ${ROS_DISTRO} --ignore-src --from-paths .'
+      - name: Build Workspace
+        run: |
+          bash -c 'source /opt/ros/${{ matrix.ros_distro }}/setup.bash; \
+          mkdir src; \
+          mv external src; \
+          mkdir -p src/grpc_vendor; \
+          mv CMakeLists.txt src/grpc_vendor; \
+          mv package.xml src/grpc_vendor; \
+          colcon build --event-handlers console_cohesion+ --cmake-args -DCMAKE_BUILD_TYPE=Release'
+      - name: Run Tests
+        run: |
+          bash -c 'source /opt/ros/${{ matrix.ros_distro }}/setup.bash; \
+          colcon test --event-handlers console_cohesion+; \
+          colcon test-result --verbose'
