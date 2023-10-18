@@ -3,10 +3,11 @@ project(grpc_vendor CXX)
 
 find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_vendor_package REQUIRED)
-find_package(grpc 1.54.1 QUIET)
+find_package(protobuf 3.21.12.0 QUIET)
+find_package(gRPC 1.54.1 QUIET)
 
 ament_vendor(grpc_vendor
-  SATISFIED ${grpc_FOUND}
+  SATISFIED ${gRPC_FOUND}
   VCS_URL https://github.com/grpc/grpc.git
   VCS_VERSION v1.54.1
   CMAKE_ARGS
